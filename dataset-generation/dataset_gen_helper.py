@@ -29,31 +29,22 @@ def operation(df):
 # Helper Function for all datasets
 def encode_dataset(DATASET_NAME):
     print(f"Opening ../data_raw/{DATASET_NAME}.csv")
-    # df = read_csv(f"./data_raw/{DATASET_NAME}.csv")
     ProgressBar().register()
     df = dd.read_csv(f"../data_raw/{DATASET_NAME}.csv")
-    # Both datasets shall only publish the testing set
-    # if DATASET_NAME == "NF-CSE-CIC-IDS2018-v2" or DATASET_NAME == "NF-UQ-NIDS-v2":
-    #     # FIXME: DASK ML does not currently support stratify option, PR is open for 4,5 years now.... 
-    #     df, _ = train_test_split(df, test_size=0.95, random_state=42)
-
-    # df = dd.from_pandas(df,npartitions=10)
     ProgressBar().register()
     df = df.pipe(operation)
-    return df
+    df.to_parquet(f'../data_raw/{DATASET_NAME}-processed')
 
 
-def process_arrow_data(df, DATASET_NAME):
-    df = df.compute()
-    dataset = datasets.Dataset.from_pandas(df)
+def process_arrow_data(DATASET_NAME):
+    dataset = datasets.Dataset.from_parquet(f'../data_raw/{DATASET_NAME}-processed/*')
+    print(dataset)
     dataset = dataset.class_encode_column("output")
     dataset = dataset.class_encode_column("Attack")
-    # if DATASET_NAME == "NF-UNSW-NB15-v2":
     dataset = dataset.train_test_split(test_size=0.05, seed=123, stratify_by_column="Attack")
     dataset.save_to_disk(f"./{DATASET_NAME}/")
 
 if __name__ == "__main__":
     DATASET_NAME = sys.argv[1]
-
-    df = encode_dataset(DATASET_NAME)
-    process_arrow_data(df, DATASET_NAME)
+    encode_dataset(DATASET_NAME)
+    process_arrow_data(DATASET_NAME)
