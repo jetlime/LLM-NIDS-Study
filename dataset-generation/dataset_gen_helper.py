@@ -1,6 +1,4 @@
 import sys
-from pandas import read_csv
-from dask_ml.model_selection import train_test_split
 import datasets
 import dask.dataframe as dd 
 from dask.diagnostics import ProgressBar
